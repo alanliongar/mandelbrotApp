@@ -30,17 +30,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-fun mandelBrot(){
-
-
-
-
-
-
-
-}
-
-
 
 
 
