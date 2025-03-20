@@ -1,6 +1,6 @@
 package com.example.mandelbrotapp
 
-import kotlin.math.sqrt
+import kotlin.math.*
 
 fun main() {
     mandelBrotParte01(50000, -1.5f, -1.0f, 0.5f, 1.0f)
