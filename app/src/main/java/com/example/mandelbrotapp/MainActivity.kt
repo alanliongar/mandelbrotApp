@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         //val rightSuperior = Pair(0.285413f, -0.007440f)
         val leftInferior = Pair(-1.5f, -1.0f)
         //val leftInferior = Pair(0.278587f, -0.012560f)
-        val numOfIterations = 50000L
+        val numOfIterations = 2000L
         val width = 500
         val height = 500
         val firstColor = 0xFFFF0000.toInt() //red
@@ -77,9 +77,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun ponderacaoSimpleContBuddhaV2(cMax: Long, cMin: Long, cCont: Long): Pair<Float, Float> {
+    if (cMax == cMin) return Pair(1f, 0f)
+
+    val normalizado = ((cCont - cMin).toDouble() / (cMax - cMin).toDouble())
+    val realcado = normalizado.pow(0.3) // realce dos fracos
+
+    val peso = realcado.coerceIn(0.0, 1.0).toFloat()
+    return Pair(1.0f - peso, peso)
+}
+
+
 fun ponderacaoSimpleContBuddha(cMax: Long, cMin: Long, cCont: Long): Pair<Float, Float> {
-    val p = ((cCont - cMin).toDouble() / (cMax - cMin).toDouble()).coerceAtMost(1.0) * 2.5
-    val peso = p.coerceAtMost(1.0).toFloat()
+    val p = ((cCont - cMin).toDouble() / (cMax - cMin).toDouble())
+    val peso = min(p * 8.0, 1.0).toFloat()
     return Pair(1.0f - peso, peso)
 }
 
