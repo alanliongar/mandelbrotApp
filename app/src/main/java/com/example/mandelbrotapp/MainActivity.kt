@@ -44,6 +44,17 @@ class MainActivity : ComponentActivity() {
                 color2 = secondColor,
                 whiteAndBlackImage = inicioExc
             )
+
+        val conjuntoBuddhaBrot = conjuntoBuddhaBrot(
+            mandelbrotComLimites = inicioExc,
+            iteracoes = numOfIterations,
+            rightSuperior = rightSuperior,
+            leftInferior = leftInferior,
+            width = width,
+            height = height
+        )
+
+
         setContent {
             MandelbrotAPPTheme {
                 MandelbrotImage(matrizColorida, width, height)
@@ -91,7 +102,6 @@ fun imagemColorida(
     return matrizColorida
 }
 
-
 fun confeccionarCor(color1: Int, color2: Int, p1: Float): Int {
     //aux cores
     val a1 = (color1 shr 24) and 0xFF
@@ -131,22 +141,44 @@ fun conjuntoBuddhaBrot(
     leftInferior: Pair<Float, Float>,
     width: Int,
     height: Int
-): IntArray {
+): Pair<LongArray, LongArray> {
     val Dy = rightSuperior.second - leftInferior.second
     val Dx = rightSuperior.first - leftInferior.first
     val varPixelsY = Dy / height
     val varPixelsX = Dx / width
-    val k = LongArray(width * height) { 0L }
-    val buddhaBrot = LongArray(width * height) { 0L }
+    val buddhaBrotAll = LongArray(width * height) { 0L }
+    val buddhaBrotBelonged = LongArray(width * height) { 0L }
+    var xAnt = 0.0f
+    var yAnt = 0.0f
+    var xis: Float //ponto 'atual'
+    var yps: Float //ponto 'atual'
 
-
-
-    for (i in 0..iteracoes) {
-
+    var yIte = rightSuperior.second - 0.5f * Dy
+    for (i in 0 until height) {
+        var xIte = leftInferior.first + 0.5f * Dx
+        for (j in 0 until width) {
+            for (k in 0..iteracoes) {
+                xis = (xAnt * xAnt) - (yAnt * yAnt) + xIte
+                yps = 2 * xAnt * yAnt + yIte
+                if (xis <= rightSuperior.first && xis >= leftInferior.first && yps <= rightSuperior.second && yps >= leftInferior.second) {
+                    if (sqrt(xis * xis + yps * yps) > 2.0) {
+                        break
+                    } else {
+                        //Aqui que tá o core, fazer a lógica pra SOMAR NO PONTO CERTO DO VETOR quando isso aqui acontece.
+                        xAnt = xis
+                        yAnt = yps
+                        buddhaBrotAll[i * width + j]++
+                    }
+                } else {
+                    break
+                }
+            }
+            xIte += varPixelsX
+        }
+        yIte -= varPixelsY
     }
 
-
-    return intArrayOf(1, 2)
+    return Pair(buddhaBrotAll, buddhaBrotBelonged)
 }
 
 
@@ -166,9 +198,9 @@ fun mandelBrotDefiner(
 
     val arrayIntToImage = IntArray(widthImageSize * heightImageSize) { 0xFFFFFFFF.toInt() }
 
-    var yIte = rightSuperior.second
+    var yIte = rightSuperior.second - 0.5f * Dy
     for (i in 0 until heightImageSize) {
-        var xIte = leftInferior.first
+        var xIte = leftInferior.first + 0.5f * Dx
         for (j in 0 until widthImageSize) {
             val result = pertenceAoMandelbrot(xIte, yIte, iteracoes)
             if (result.first) {
