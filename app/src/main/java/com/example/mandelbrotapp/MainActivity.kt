@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
 
         val rightSuperior = Pair(0.285413f, -0.007440f)
         val leftInferior = Pair(0.278587f, -0.012560f)
-        val numOfIterations = 50000L
+        val numOfIterations = 5000L
         val width = 500
         val height = 500
         val firstColor = 0xFFFF0000.toInt() //red
@@ -34,8 +34,7 @@ class MainActivity : ComponentActivity() {
                 leftInferior = leftInferior,
                 widthImageSize = width,
                 heightImageSize = height
-            )
-
+            )//devolve um objeto mandelbrotComLimites
 
         val matrizPretoEBranco: IntArray = inicioExc.imgArray //
         val matrizColorida =
@@ -52,11 +51,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-class MandelbrotComLimites(
-    val imgArray: IntArray,
-    val kArray: LongArray
-)
 
 @Composable
 fun MandelbrotImage(pixelData: IntArray, width: Int, height: Int) {
@@ -97,6 +91,7 @@ fun imagemColorida(
     return matrizColorida
 }
 
+
 fun confeccionarCor(color1: Int, color2: Int, p1: Float): Int {
     //aux cores
     val a1 = (color1 shr 24) and 0xFF
@@ -122,6 +117,36 @@ fun ponderacaoLogaritmica(kMax: Long, kMin: Long, kc: Long): Pair<Float, Float> 
         10.toDouble()
     )).toFloat()
     return Pair(1.0f - p, p)
+}
+
+class MandelbrotComLimites(
+    val imgArray: IntArray,
+    val kArray: LongArray
+)
+
+fun conjuntoBuddhaBrot(
+    mandelbrotComLimites: MandelbrotComLimites,
+    iteracoes: Long,
+    rightSuperior: Pair<Float, Float>,
+    leftInferior: Pair<Float, Float>,
+    width: Int,
+    height: Int
+): IntArray {
+    val Dy = rightSuperior.second - leftInferior.second
+    val Dx = rightSuperior.first - leftInferior.first
+    val varPixelsY = Dy / height
+    val varPixelsX = Dx / width
+    val k = LongArray(width * height) { 0L }
+    val buddhaBrot = LongArray(width * height) { 0L }
+
+
+
+    for (i in 0..iteracoes) {
+
+    }
+
+
+    return intArrayOf(1, 2)
 }
 
 
