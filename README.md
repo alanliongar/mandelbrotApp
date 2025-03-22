@@ -53,7 +53,7 @@ And you can also run on the mobile which is the main application.
 ```
 The MIT License (MIT)
 
-Copyright (c) 2024 Alan Lucindo Gomes
+Copyright (c) 2025 Alan Lucindo Gomes
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
