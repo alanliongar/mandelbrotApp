@@ -11,6 +11,10 @@ import com.example.mandelbrotapp.ui.theme.MandelbrotAPPTheme
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import android.graphics.Bitmap
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.*
 
 
@@ -18,82 +22,94 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        lifecycleScope.launch(Dispatchers.Default) {
+            val fatorBuddhaBrot = 2
+            val rightSuperior = Pair(0.8f, 1.0f)
+            //val rightSuperior = Pair(0.285413f, -0.007440f)
+            val leftInferior = Pair(-1.5f, -1.0f)
+            //val leftInferior = Pair(0.278587f, -0.012560f)
+            val numOfIterations = 2000L
+            val width = 200
+            val height = 200
+            //val firstColor = 0xFFFF0000.toInt() //red
+            val firstColor = 0xFF000000.toInt() //preto
+            //val secondColor = 0xFFFFFF00.toInt() //yellow
+            val secondColor = 0xFFFFFFFF.toInt() // branco
 
-        val rightSuperior = Pair(0.5f, 1.0f)
-        //val rightSuperior = Pair(0.285413f, -0.007440f)
-        val leftInferior = Pair(-1.5f, -1.0f)
-        //val leftInferior = Pair(0.278587f, -0.012560f)
-        val numOfIterations = 2000L
-        val width = 500
-        val height = 500
-        val firstColor = 0xFFFF0000.toInt() //red
-        val secondColor = 0xFFFFFF00.toInt() //yellow
+            val inicioExc =
+                mandelBrotDefiner( //devolve um objeto q tem duas listas: a matriz preto e branco e o k com as qtdds de iterações
+                    iteracoes = numOfIterations,
+                    rightSuperior = rightSuperior,
+                    leftInferior = leftInferior,
+                    widthImageSize = width,
+                    heightImageSize = height
+                )//devolve um objeto mandelbrotComLimites
 
-        val inicioExc =
-            mandelBrotDefiner( //devolve um objeto q tem duas listas: a matriz preto e branco e o k com as qtdds de iterações
+            val matrizPretoEBranco: IntArray = inicioExc.imgArray //
+            val matrizColorida =
+                imagemColorida(
+                    iterations = numOfIterations,
+                    color1 = firstColor,
+                    color2 = secondColor,
+                    whiteAndBlackImage = inicioExc,
+                    typeWeight = "log" //disponiveis: gamma, log e simple.
+                )
+
+            val conjuntoBuddhaBrot = conjuntoBuddhaBrot(
+                fator = fatorBuddhaBrot,
+                mandelbrotComLimites = inicioExc,
                 iteracoes = numOfIterations,
                 rightSuperior = rightSuperior,
                 leftInferior = leftInferior,
-                widthImageSize = width,
-                heightImageSize = height
-            )//devolve um objeto mandelbrotComLimites
+                width = width,
+                height = height
+            ) //retorna um par de vetores long de duas dimensões, contadores de valores. um simples e outro do belong
 
-        val matrizPretoEBranco: IntArray = inicioExc.imgArray //
-        val matrizColorida =
-            imagemColorida(
-                iterations = numOfIterations,
-                color1 = firstColor,
-                color2 = secondColor,
-                whiteAndBlackImage = inicioExc
-            )
+            val longArrayBuddha = conjuntoBuddhaBrot.first
+            val max = longArrayBuddha.maxOrNull() ?: 0L
+            val min = longArrayBuddha.minOrNull() ?: 0L
 
-        val conjuntoBuddhaBrot = conjuntoBuddhaBrot(
-            mandelbrotComLimites = inicioExc,
-            iteracoes = numOfIterations,
-            rightSuperior = rightSuperior,
-            leftInferior = leftInferior,
-            width = width,
-            height = height
-        ) //retorna um par de vetores long de duas dimensões, contadores de valores. um simples e outro do belong
-
-        val longArrayBuddha = conjuntoBuddhaBrot.first
-        val max = longArrayBuddha.maxOrNull() ?: 0L
-        val min = longArrayBuddha.minOrNull() ?: 0L
-        println("Alannn Min: $min")
-        println("Alannn Max: $max")
-        val novoIntArrayBuddha: IntArray = longArrayBuddha.map { vl ->
-            confeccionarCor(
-                color1 = firstColor,
-                color2 = secondColor,
-                ponderacaoSimpleContBuddha(max, min, vl).first
-            )
-        }.toIntArray()
-
-        setContent {
-            MandelbrotAPPTheme {
-                MandelbrotImage(novoIntArrayBuddha, width, height)
+            val novoIntArrayBuddha: IntArray = longArrayBuddha.map { vl ->
+                confeccionarCor(
+                    color1 = firstColor,
+                    color2 = secondColor,
+                    weightImageWithMath(max, min, vl, "simple").first
+                )
+            }.toIntArray()
+            withContext(Dispatchers.Main) {
+                setContent {
+                    MandelbrotAPPTheme {
+                        MandelbrotImage(novoIntArrayBuddha, width, height)
+                    }
+                }
             }
         }
     }
 }
 
-fun ponderacaoSimpleContBuddhaV2(cMax: Long, cMin: Long, cCont: Long): Pair<Float, Float> {
-    if (cMax == cMin) return Pair(1f, 0f)
+fun weightImageWithMath(
+    cMax: Long,
+    cMin: Long,
+    cCont: Long,
+    typeMath: String = "simple"
+): Pair<Float, Float> {
+    if (typeMath == "log") {
+        var p = (log((cCont - cMin + 1).toDouble(), 10.toDouble()) / log(
+            (cMax - cMin + 1).toDouble(),
+            10.toDouble()
+        )).toFloat()
+        return Pair(1.0f - p, p)
+    } else if (typeMath == "gamma") {
+        val gamma = 0.6
+        val p = (cCont.toDouble() / cMax).pow(gamma).toFloat()
+        return Pair(1.0f - p, p)
+    } else {
+        val calc = ((cCont - cMin).toDouble() / (cMax - cMin).toDouble())
+        val p = min(calc * 2.5, 1.0).toFloat()
+        return Pair(1.0f - p, p)
+    }
 
-    val normalizado = ((cCont - cMin).toDouble() / (cMax - cMin).toDouble())
-    val realcado = normalizado.pow(0.3) // realce dos fracos
-
-    val peso = realcado.coerceIn(0.0, 1.0).toFloat()
-    return Pair(1.0f - peso, peso)
 }
-
-
-fun ponderacaoSimpleContBuddha(cMax: Long, cMin: Long, cCont: Long): Pair<Float, Float> {
-    val p = ((cCont - cMin).toDouble() / (cMax - cMin).toDouble())
-    val peso = min(p * 8.0, 1.0).toFloat()
-    return Pair(1.0f - peso, peso)
-}
-
 
 @Composable
 fun MandelbrotImage(pixelData: IntArray, width: Int, height: Int) {
@@ -111,6 +127,7 @@ fun imagemColorida(
     color1: Int,
     color2: Int,
     whiteAndBlackImage: MandelbrotComLimites,
+    typeWeight: String = "log"
 ): IntArray {
     var valoresValidos = whiteAndBlackImage.kArray.filter { it > 0 && it < iterations }
     val kMax = valoresValidos.maxOrNull() ?: iterations - 1
@@ -126,7 +143,12 @@ fun imagemColorida(
             matrizColorida[ctg] = confeccionarCor(
                 color1,
                 color2,
-                ponderacaoLogaritmica(kMax, kMin, whiteAndBlackImage.kArray[ctg]).first
+                weightImageWithMath(
+                    kMax,
+                    kMin,
+                    whiteAndBlackImage.kArray[ctg],
+                    typeMath = typeWeight
+                ).first
             )
             ctg++
         }
@@ -151,13 +173,6 @@ fun confeccionarCor(color1: Int, color2: Int, p1: Float): Int {
     return (ap shl 24) or (rp shl 16) or (gp shl 8) or bp
 }
 
-fun ponderacaoLogaritmica(kMax: Long, kMin: Long, kc: Long): Pair<Float, Float> {
-    var p = (log((kc - kMin + 1).toDouble(), 10.toDouble()) / log(
-        (kMax - kMin + 1).toDouble(),
-        10.toDouble()
-    )).toFloat()
-    return Pair(1.0f - p, p)
-}
 
 class MandelbrotComLimites(
     val imgArray: IntArray,
@@ -165,6 +180,7 @@ class MandelbrotComLimites(
 )
 
 fun conjuntoBuddhaBrot(
+    fator: Int,
     mandelbrotComLimites: MandelbrotComLimites,
     iteracoes: Long,
     rightSuperior: Pair<Float, Float>,
@@ -174,45 +190,48 @@ fun conjuntoBuddhaBrot(
 ): Pair<LongArray, LongArray> {
     val Dy = rightSuperior.second - leftInferior.second
     val Dx = rightSuperior.first - leftInferior.first
-    val varPixelsY = Dy / height
-    val varPixelsX = Dx / width
+    val varPixelsY = Dy / (height * fator)
+    val varPixelsX = Dx / (width * fator)
+    val stepY = varPixelsY * fator
+    val stepX = varPixelsX * fator
     val buddhaBrotAll = LongArray(width * height) { 0L }
     val buddhaBrotBelonged = LongArray(width * height) { 0L }
 
     // Amostragem: centro de cada pixel
-    var yIte = rightSuperior.second - 0.5f * varPixelsY
-    for (i in 0 until height) {
-        var xIte = leftInferior.first + 0.5f * varPixelsX
-        for (j in 0 until width) {
+    var yIte = rightSuperior.second - 0.5f * (stepY)
+    for (i in 0 until height * fator) {
+        var xIte = leftInferior.first + 0.5f * (stepX)
+        for (j in 0 until width * fator) {
+            var xAnt = 0.0f
+            var yAnt = 0.0f
+            var xis: Float
+            var yps: Float
             val result = pertenceAoMandelbrot(xIte, yIte, iteracoes)
             if (!result.first) {
-                var xAnt = 0.0f
-                var yAnt = 0.0f
-                var xis: Float
-                var yps: Float
-
-                for (k in 0..result.second) {
+                for (k in 0..iteracoes) {
                     xis = (xAnt * xAnt) - (yAnt * yAnt) + xIte
                     yps = 2 * xAnt * yAnt + yIte
+                    if (xis * xis + yps * yps <= 4.0f) {
+                        if (xis in leftInferior.first..rightSuperior.first &&
+                            yps in leftInferior.second..rightSuperior.second
+                        ) {
+                            val pixelX = floor((xis - leftInferior.first) / (stepX)).toInt()
+                                .coerceIn(0, width - 1)
+                            val pixelY = floor((rightSuperior.second - yps) / (stepY)).toInt()
+                                .coerceIn(0, height - 1)
 
-                    // Verifica se ainda está na área visível
-                    if (xis in leftInferior.first..rightSuperior.first &&
-                        yps in leftInferior.second..rightSuperior.second
-                    ) {
+                            if (pixelX in 0 until width && pixelY in 0 until height) {
+                                buddhaBrotAll[pixelY * width + pixelX]++
+                            }
 
-                        val pixelX = ((xis - leftInferior.first) / varPixelsX).toInt()
-                        val pixelY = ((rightSuperior.second - yps) / varPixelsY).toInt()
-
-                        if (pixelX in 0 until width && pixelY in 0 until height) {
-                            buddhaBrotAll[pixelY * width + pixelX]++
+                            xAnt = xis
+                            yAnt = yps
                         }
-
-                        xAnt = xis
-                        yAnt = yps
+                    } else {
+                        break
                     }
                 }
             } else {
-                continue
             }
 
             xIte += varPixelsX
