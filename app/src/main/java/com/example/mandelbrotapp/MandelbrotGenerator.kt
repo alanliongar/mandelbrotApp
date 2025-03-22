@@ -7,21 +7,43 @@ import kotlin.math.*
 import kotlin.system.measureTimeMillis
 
 fun main() {
-    val width = 1920
-    val height = 1080
-    val iteracoes = 50000L
+    // Cores invertidas (boneco x fundo)
+    principal(0xFFFFFFFF.toInt(), 0xFF000000.toInt()) // Branco x Preto
+    principal(0xFFFFE61E.toInt(), 0xFF1E1EFF.toInt()) // Amarelo vivo x Azul royal
+    principal(0xFFFF4500.toInt(), 0xFF006400.toInt()) // Laranja avermelhado x Verde escuro
+    principal(0xFFFFFF00.toInt(), 0xFF8B00FF.toInt()) // Amarelo x Roxo escuro
+    principal(0xFFFF7F50.toInt(), 0xFF0F52BA.toInt()) // Coral claro x Azul médio
+}
+
+
+fun principal(firstColor: Int, secondColor: Int) {
+    val width = 500
+    val height = 500
+    val iteracoes = 5000L
     val rightSuperior = Pair(0.8f, 1.0f)
     val leftInferior = Pair(-1.5f, -1.0f)
-    val firstColor = 0xFFFFFFFF.toInt() // branco - cor do buddha
-    val secondColor = 0xFF000000.toInt() // preto - cor do fundo
+
     val outputDir = "C:/Users/Alan/Desktop/"
 
     val mandelbrot: MandelbrotComLimites
     val timeMandelbrot = measureTimeMillis {
-        mandelbrot = mandelBrotDefiner(iteracoes, rightSuperior, leftInferior, width, height)
+        mandelbrot = mandelBrotDefiner(
+            iteracoes,
+            rightSuperior,
+            leftInferior,
+            width,
+            height,
+            color1 = firstColor,
+            color2 = secondColor
+        )
     }
     println("Tempo Mandelbrot PB: ${timeMandelbrot}ms")
-    salvarImagem(mandelbrot.imgArray, width, height, "$outputDir/MandelbrotPB.png")
+    salvarImagem(
+        mandelbrot.imgArray,
+        width,
+        height,
+        "$outputDir/MandelbrotPB_${firstColor}_${secondColor}.png"
+    )
 
     listOf("log", "simple", "gamma").forEach { mode ->
         val imgArray: IntArray
@@ -29,10 +51,16 @@ fun main() {
             imgArray = imagemColorida(iteracoes, firstColor, secondColor, mandelbrot, mode)
         }
         println("Tempo Mandelbrot $mode: ${tempo}ms")
-        salvarImagem(imgArray, width, height, "$outputDir/Mandelbrot_${mode}.png")
+        salvarImagem(
+            imgArray,
+            width,
+            height,
+            "$outputDir/Mandelbrot_${mode}_${firstColor}_${secondColor}_.png"
+        )
     }
 
-    val buddha = conjuntoBuddhaBrot(5, mandelbrot, iteracoes, rightSuperior, leftInferior, width, height)
+    val buddha =
+        conjuntoBuddhaBrot(5, mandelbrot, iteracoes, rightSuperior, leftInferior, width, height)
     val max = buddha.first.maxOrNull() ?: 1L
     val min = buddha.first.minOrNull() ?: 0L
 
@@ -49,7 +77,11 @@ fun main() {
                 val y = i / width
                 image.setRGB(x, y, color)
             }
-            ImageIO.write(image, "png", File("$outputDir/Buddha_${mode}.png"))
+            ImageIO.write(
+                image,
+                "png",
+                File("$outputDir/Buddha_${mode}_${firstColor}_{secondColor}.png")
+            )
         }
         println("Tempo Buddha $mode: ${tempo}ms")
     }
@@ -64,7 +96,6 @@ fun salvarImagem(array: IntArray, width: Int, height: Int, path: String) {
     }
     ImageIO.write(image, "png", File(path))
 }
-
 
 
 fun weightImageWithMath(
@@ -219,6 +250,8 @@ fun mandelBrotDefiner(
     leftInferior: Pair<Float, Float>,
     widthImageSize: Int,
     heightImageSize: Int,
+    color1: Int = 0xFFFFFFFF.toInt(),
+    color2: Int = 0xFF000000.toInt()
 ): MandelbrotComLimites {
     //preto e branco!!
     val Dy = rightSuperior.second - leftInferior.second
@@ -227,15 +260,15 @@ fun mandelBrotDefiner(
     val varX = Dx / widthImageSize
     val k = LongArray(widthImageSize * heightImageSize) { 0L }
 
-    val arrayIntToImage = IntArray(widthImageSize * heightImageSize) { 0xFFFFFFFF.toInt() }
+    val arrayIntToImage = IntArray(widthImageSize * heightImageSize) { color1 }
 
-    var yIte = rightSuperior.second - 0.5f * Dy
+    var yIte = rightSuperior.second - 0.5f * varY
     for (i in 0 until heightImageSize) {
-        var xIte = leftInferior.first + 0.5f * Dx
+        var xIte = leftInferior.first + 0.5f * varX
         for (j in 0 until widthImageSize) {
             val result = pertenceAoMandelbrot(xIte, yIte, iteracoes)
             if (result.first) {
-                arrayIntToImage[i * widthImageSize + j] = 0xFF000000.toInt()
+                arrayIntToImage[i * widthImageSize + j] = color2
             }
             k[i * widthImageSize + j] = result.second
             xIte += varX

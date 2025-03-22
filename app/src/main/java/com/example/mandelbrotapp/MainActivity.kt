@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         lifecycleScope.launch(Dispatchers.Default) {
-            val fatorBuddhaBrot = 2
+            val fatorBuddhaBrot = 5
             val rightSuperior = Pair(0.8f, 1.0f)
             //val rightSuperior = Pair(0.285413f, -0.007440f)
             val leftInferior = Pair(-1.5f, -1.0f)
@@ -32,9 +32,9 @@ class MainActivity : ComponentActivity() {
             val width = 200
             val height = 200
             //val firstColor = 0xFFFF0000.toInt() //red
-            val firstColor = 0xFF000000.toInt() //preto
+            val firstColor = 0xFFFFFFFF.toInt() // branco
             //val secondColor = 0xFFFFFF00.toInt() //yellow
-            val secondColor = 0xFFFFFFFF.toInt() // branco
+            val secondColor = 0xFF000000.toInt() //preto
 
             val inicioExc =
                 mandelBrotDefiner( //devolve um objeto q tem duas listas: a matriz preto e branco e o k com as qtdds de iterações
@@ -42,11 +42,13 @@ class MainActivity : ComponentActivity() {
                     rightSuperior = rightSuperior,
                     leftInferior = leftInferior,
                     widthImageSize = width,
-                    heightImageSize = height
+                    heightImageSize = height,
+                    color1 = firstColor, //branco
+                    color2 = secondColor, //preto
                 )//devolve um objeto mandelbrotComLimites
 
             val matrizPretoEBranco: IntArray = inicioExc.imgArray //
-            val matrizColorida =
+            /*val matrizColorida =
                 imagemColorida(
                     iterations = numOfIterations,
                     color1 = firstColor,
@@ -75,11 +77,11 @@ class MainActivity : ComponentActivity() {
                     color2 = secondColor,
                     weightImageWithMath(max, min, vl, "simple").first
                 )
-            }.toIntArray()
+            }.toIntArray()*/
             withContext(Dispatchers.Main) {
                 setContent {
                     MandelbrotAPPTheme {
-                        MandelbrotImage(novoIntArrayBuddha, width, height)
+                        MandelbrotImage(matrizPretoEBranco, width, height)
                     }
                 }
             }
@@ -219,11 +221,9 @@ fun conjuntoBuddhaBrot(
                                 .coerceIn(0, width - 1)
                             val pixelY = floor((rightSuperior.second - yps) / (stepY)).toInt()
                                 .coerceIn(0, height - 1)
-
                             if (pixelX in 0 until width && pixelY in 0 until height) {
                                 buddhaBrotAll[pixelY * width + pixelX]++
                             }
-
                             xAnt = xis
                             yAnt = yps
                         }
@@ -249,6 +249,8 @@ fun mandelBrotDefiner(
     leftInferior: Pair<Float, Float>,
     widthImageSize: Int,
     heightImageSize: Int,
+    color1: Int,
+    color2: Int
 ): MandelbrotComLimites {
     //preto e branco!!
     val Dy = rightSuperior.second - leftInferior.second
@@ -256,23 +258,20 @@ fun mandelBrotDefiner(
     val varY = Dy / heightImageSize
     val varX = Dx / widthImageSize
     val k = LongArray(widthImageSize * heightImageSize) { 0L }
-
-    val arrayIntToImage = IntArray(widthImageSize * heightImageSize) { 0xFFFFFFFF.toInt() }
-
-    var yIte = rightSuperior.second - 0.5f * Dy
+    val arrayIntToImage = IntArray(widthImageSize * heightImageSize) { color1 } //branco
+    var yIte = rightSuperior.second - 0.5f * varY
     for (i in 0 until heightImageSize) {
-        var xIte = leftInferior.first + 0.5f * Dx
+        var xIte = leftInferior.first + 0.5f * varX
         for (j in 0 until widthImageSize) {
             val result = pertenceAoMandelbrot(xIte, yIte, iteracoes)
             if (result.first) {
-                arrayIntToImage[i * widthImageSize + j] = 0xFF000000.toInt()
+                arrayIntToImage[i * widthImageSize + j] = color2 //preto
             }
             k[i * widthImageSize + j] = result.second
             xIte += varX
         }
         yIte -= varY
     }
-
     return MandelbrotComLimites(
         imgArray = arrayIntToImage,
         kArray = k
