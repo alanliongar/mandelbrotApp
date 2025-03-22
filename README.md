@@ -1,4 +1,4 @@
-<h1>Mandelbrot & Buddhabrot Generator</h1>
+<h1>🌀 Mandelbrot & Buddha Fractals</h1>
 MandelbrotApp is a Kotlin Android application that visualizes fractals, including the classic Mandelbrot Set and the fascinating Buddhabrot. <br>
 The app renders fractals using mathematical precision and allows different color schemes and sampling resolutions for high-quality images.
 
