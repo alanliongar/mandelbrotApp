@@ -6,17 +6,19 @@ import javax.imageio.ImageIO
 import kotlin.math.*
 
 fun main() {
-    val width = 1000
-    val height = 1000
-    val iteracoes = 5000L
-    val rightSuperior = Pair(0.5f, 1.0f)
+    val width = 200
+    val height = 200
+    val iteracoes = 50000L
+    val rightSuperior = Pair(0.8f, 1.0f)
     val leftInferior = Pair(-1.5f, -1.0f)
-    val firstColor = 0xFF000000.toInt() // preto
-    val secondColor = 0xFFFFFFFF.toInt() // branco
+    val firstColor = 0xFFFFFFFF.toInt() // branco - cor do buddha
+    val secondColor = 0xFF000000.toInt() // preto - cor do fundo
 
     val mandelbrot = mandelBrotDefiner(iteracoes, rightSuperior, leftInferior, width, height)
+    val mandelbrotColorido =
+        imagemColorida(iteracoes, firstColor, secondColor, mandelbrot, "simple")
     val buddha = conjuntoBuddhaBrot(
-        fator = 2,
+        fator = 5,
         mandelbrotComLimites = mandelbrot,
         iteracoes = iteracoes,
         rightSuperior = rightSuperior,
@@ -46,7 +48,6 @@ fun main() {
 
     println("Imagem gerada em: ${output.absolutePath}")
 }
-
 
 
 fun weightImageWithMath(
