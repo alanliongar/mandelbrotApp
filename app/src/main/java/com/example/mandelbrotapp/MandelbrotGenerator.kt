@@ -4,50 +4,67 @@ import java.awt.Color
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.math.*
+import kotlin.system.measureTimeMillis
 
 fun main() {
-    val width = 200
-    val height = 200
+    val width = 1920
+    val height = 1080
     val iteracoes = 50000L
     val rightSuperior = Pair(0.8f, 1.0f)
     val leftInferior = Pair(-1.5f, -1.0f)
     val firstColor = 0xFFFFFFFF.toInt() // branco - cor do buddha
     val secondColor = 0xFF000000.toInt() // preto - cor do fundo
+    val outputDir = "C:/Users/Alan/Desktop/"
 
-    val mandelbrot = mandelBrotDefiner(iteracoes, rightSuperior, leftInferior, width, height)
-    val mandelbrotColorido =
-        imagemColorida(iteracoes, firstColor, secondColor, mandelbrot, "simple")
-    val buddha = conjuntoBuddhaBrot(
-        fator = 5,
-        mandelbrotComLimites = mandelbrot,
-        iteracoes = iteracoes,
-        rightSuperior = rightSuperior,
-        leftInferior = leftInferior,
-        width = width,
-        height = height
-    )
+    val mandelbrot: MandelbrotComLimites
+    val timeMandelbrot = measureTimeMillis {
+        mandelbrot = mandelBrotDefiner(iteracoes, rightSuperior, leftInferior, width, height)
+    }
+    println("Tempo Mandelbrot PB: ${timeMandelbrot}ms")
+    salvarImagem(mandelbrot.imgArray, width, height, "$outputDir/MandelbrotPB.png")
 
+    listOf("log", "simple", "gamma").forEach { mode ->
+        val imgArray: IntArray
+        val tempo = measureTimeMillis {
+            imgArray = imagemColorida(iteracoes, firstColor, secondColor, mandelbrot, mode)
+        }
+        println("Tempo Mandelbrot $mode: ${tempo}ms")
+        salvarImagem(imgArray, width, height, "$outputDir/Mandelbrot_${mode}.png")
+    }
+
+    val buddha = conjuntoBuddhaBrot(5, mandelbrot, iteracoes, rightSuperior, leftInferior, width, height)
     val max = buddha.first.maxOrNull() ?: 1L
     val min = buddha.first.minOrNull() ?: 0L
 
-    val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+    listOf("log", "simple", "gamma").forEach { mode ->
+        val tempo = measureTimeMillis {
+            val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+            for (i in 0 until width * height) {
+                val color = confeccionarCor(
+                    firstColor,
+                    secondColor,
+                    weightImageWithMath(max, min, buddha.first[i], mode).second
+                )
+                val x = i % width
+                val y = i / width
+                image.setRGB(x, y, color)
+            }
+            ImageIO.write(image, "png", File("$outputDir/Buddha_${mode}.png"))
+        }
+        println("Tempo Buddha $mode: ${tempo}ms")
+    }
+}
 
-    for (i in 0 until width * height) {
-        val color = confeccionarCor(
-            firstColor,
-            secondColor,
-            weightImageWithMath(max, min, buddha.first[i], "simple").second
-        )
+fun salvarImagem(array: IntArray, width: Int, height: Int, path: String) {
+    val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+    for (i in array.indices) {
         val x = i % width
         val y = i / width
-        image.setRGB(x, y, color)
+        image.setRGB(x, y, array[i])
     }
-
-    val output = File("C:\\Users\\Alan\\Desktop\\buddha.png")
-    ImageIO.write(image, "png", output)
-
-    println("Imagem gerada em: ${output.absolutePath}")
+    ImageIO.write(image, "png", File(path))
 }
+
 
 
 fun weightImageWithMath(
@@ -66,7 +83,7 @@ fun weightImageWithMath(
         val gamma = 0.6
         val p = (cCont.toDouble() / cMax).pow(gamma).toFloat()
         return Pair(1.0f - p, p)
-    } else {
+    } else { //Simple
         val calc = ((cCont - cMin).toDouble() / (cMax - cMin).toDouble())
         val p = min(calc * 2.5, 1.0).toFloat()
         return Pair(1.0f - p, p)
